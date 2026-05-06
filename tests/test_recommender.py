@@ -267,3 +267,70 @@ class TestGetGenreCounts:
 
     def test_total_genre_keys(self, recommender):
         assert len(recommender.get_genre_counts()) == 5
+
+
+class TestRecommendByGenreValidation:
+    def test_empty_string_raises(self, recommender):
+        with pytest.raises(ValueError):
+            recommender.recommend_by_genre("")
+
+    def test_whitespace_raises(self, recommender):
+        with pytest.raises(ValueError):
+            recommender.recommend_by_genre("   ")
+
+    def test_non_string_raises(self, recommender):
+        with pytest.raises(ValueError):
+            recommender.recommend_by_genre(123)
+
+
+class TestRecommendByYearValidation:
+    def test_float_raises(self, recommender):
+        with pytest.raises(ValueError):
+            recommender.recommend_by_year(2010.0)
+
+    def test_year_too_low_raises(self, recommender):
+        with pytest.raises(ValueError):
+            recommender.recommend_by_year(1800)
+
+    def test_year_too_high_raises(self, recommender):
+        with pytest.raises(ValueError):
+            recommender.recommend_by_year(2200)
+
+    def test_string_year_raises(self, recommender):
+        with pytest.raises(ValueError):
+            recommender.recommend_by_year("2010")
+
+
+class TestGetRatingStats:
+    # fixture ratings: [8.5, 7.0, 9.0, 6.5, 8.0]  mean=7.8, median=8.0, min=6.5, max=9.0
+    def test_returns_dict(self, recommender):
+        assert isinstance(recommender.get_rating_stats(), dict)
+
+    def test_has_required_keys(self, recommender):
+        assert set(recommender.get_rating_stats().keys()) == {'mean', 'median', 'std', 'min', 'max'}
+
+    def test_mean(self, recommender):
+        assert recommender.get_rating_stats()['mean'] == pytest.approx(7.8)
+
+    def test_median(self, recommender):
+        assert recommender.get_rating_stats()['median'] == pytest.approx(8.0)
+
+    def test_min_max(self, recommender):
+        stats = recommender.get_rating_stats()
+        assert stats['min'] == pytest.approx(6.5)
+        assert stats['max'] == pytest.approx(9.0)
+
+
+class TestPlotRatingDistribution:
+    def test_saves_file(self, recommender, tmp_path):
+        out = tmp_path / "ratings.png"
+        recommender.plot_rating_distribution(save_path=str(out))
+        assert out.exists()
+
+    def test_file_nonempty(self, recommender, tmp_path):
+        out = tmp_path / "ratings.png"
+        recommender.plot_rating_distribution(save_path=str(out))
+        assert out.stat().st_size > 0
+
+    def test_no_error_without_save(self, recommender):
+        recommender.plot_rating_distribution()

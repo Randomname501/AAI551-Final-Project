@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use('Agg')
+
 import pytest
 import pandas as pd
 from modules.movie import Movie
@@ -23,7 +26,7 @@ RATING_ROWS = [
     (1, 5, 8.0, 0),
 ]
 
-
+# https://docs.pytest.org/en/stable/explanation/fixtures.html
 @pytest.fixture
 def sample_movie():
     return Movie(1, "Movie A (2010)", "Action|Drama", 8.5)
