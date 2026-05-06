@@ -39,12 +39,21 @@ AAI551-Final-Project/
 ### Installation
 
 ```bash
-python3 -m pip install pandas
-python3 -m pip install numpy
+python3 -m pip install pandas numpy
 ```
 
-If you are using the notebook, install Jupyter as well:
+## Running the Jupyter Notebook
 
-```bash
-python3 -m pip install jupyter
-```
+For an interactive demonstration of the recommender system:
+
+1. Install Jupyter if not already installed:
+
+   ```bash
+   pip install jupyter
+   ```
+
+2. Launch Jupyter Notebook from the project root:
+
+   ```bash
+   jupyter notebook
+   ```

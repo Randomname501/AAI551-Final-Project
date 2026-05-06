@@ -1,4 +1,4 @@
-from movie import Movie
+from modules.movie import Movie
 import pandas as pd
 
 class Recommender:
@@ -20,7 +20,10 @@ class Recommender:
         return movies
 
     def recommend_by_genre(self, genre: str, top_n: int = 5):
-        filtered = [m for m in self.movies if genre.lower() in m.genre.lower()]
+        """
+        Recommends top movies by genre based on rating
+        """
+        filtered = [m for m in self.movies if any(genre.lower() in g.lower() for g in m.genre)]
         filtered.sort(key=lambda m: m.rating, reverse=True)
         return filtered[:top_n]
 
@@ -30,7 +33,7 @@ class Recommender:
         return filtered[:top_n]
 
     def recommend_by_actor(self, actor: str, top_n: int = 5):
-        filtered = [m for m in self.movies if actor.lower() in m.actors.lower()]
+        filtered = [m for m in self.movies if any(actor.lower() in a.lower() for a in m.actors)]
         filtered.sort(key=lambda m: m.rating, reverse=True)
         return filtered[:top_n]
 
