@@ -66,6 +66,12 @@ To run our test cases you would:
 python -m pytest tests/test_recommender.py
 python -m pytest tests/test_movie.py
 ```
+If those don't work:
+
+```bash
+python -m pytest tests/test_recommender.py
+python -m pytest tests/test_movie.py
+```
 
 ## Contributions
 
