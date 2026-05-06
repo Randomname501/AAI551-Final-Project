@@ -5,14 +5,14 @@ class Movie:
 
     def __init__(self, imdb_title_id, original_title, year, genre, duration, director, writer, production_company, actors, description, avg_vote, votes):
         self.title = original_title
-        self.genre = genre
+        self.genre = genre.split(', ')
         self.director = director
         self.rating = float(avg_vote)
         self.year = int(year)
-        self.actors = actors
+        self.actors = actors.split(', ')
 
     def __str__(self):
-        return f"{self.title} is a {self.genre} movie directed by {self.director} with a rating of {self.rating}"
+        return f"{self.title} is a {', '.join(self.genre)} movie directed by {self.director} with a rating of {self.rating}"
     
     def __eq__(self, other):
         if isinstance(other, Movie):
