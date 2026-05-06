@@ -10,7 +10,12 @@ class Recommender:
     """
 
     def __init__(self, filepath: str):
-        self.movies = self.load_data(filepath)
+        try:
+            self.movies = self.load_data(filepath)
+        except FileNotFoundError:
+            print(f"File not found: {filepath}")
+        except Exception as e:
+            print(f"Error loading data: {e}")   
 
     def load_data(self, filepath: str):
         """
@@ -31,16 +36,25 @@ class Recommender:
         return filtered[:top_n]
 
     def recommend_by_director(self, director: str, top_n: int = 5):
+        """
+        Reccommends top movies by director based on rating
+        """
         filtered = [m for m in self.movies if director.lower() in m.director.lower()]
         filtered.sort(key=lambda m: m.rating, reverse=True)
         return filtered[:top_n]
 
     def recommend_by_actor(self, actor: str, top_n: int = 5):
+        """
+        Recommends top movies by actor based on rating
+        """
         filtered = [m for m in self.movies if any(actor.lower() in a.lower() for a in m.actors)]
         filtered.sort(key=lambda m: m.rating, reverse=True)
         return filtered[:top_n]
 
     def recommend_top_rated(self, top_n: int = 5):
+        """
+        Recommends top rated movies
+        """
         sorted_movies = sorted(self.movies, key=lambda m: m.rating, reverse=True)
         return sorted_movies[:top_n]
 

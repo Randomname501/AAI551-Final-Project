@@ -39,7 +39,7 @@ AAI551-Final-Project/
 ### Installation
 
 ```bash
-python3 -m pip install pandas numpy
+python3 -m pip install pandas numpy pytest
 ```
 
 ## Running the Jupyter Notebook
@@ -57,3 +57,17 @@ For an interactive demonstration of the recommender system:
    ```bash
    jupyter notebook
    ```
+
+## Running Pytest
+
+To run our test cases you would:
+
+```bash
+python -m pytest tests/test_recommender.py
+python -m pytest tests/test_movie.py
+```
+
+## Contributions
+
+Yihan: Created movie.py and created README and documentation
+Suprith: Created Recommender.py and created test cases.
