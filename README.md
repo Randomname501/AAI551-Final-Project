@@ -97,6 +97,10 @@ pip install pandas numpy matplotlib ipywidgets pytest
 
 The notebook is organized into three sections:
 
+**References used to learn widget development:**
+- [Widget Custom](https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20Custom.html) — ipywidgets documentation on building custom widgets
+- [Style Guide (v7.6.3)](https://ipywidgets.readthedocs.io/en/7.6.3/examples/Widget%20Styling.html) — ipywidgets style guide
+
 - **Interactive Movie Explorer** — Six widget panels that update results in real time:
   - *Search by Title* — type any fragment to find matching movies
   - *Filter by Genre* — dropdown of all 19 genres + result count slider
