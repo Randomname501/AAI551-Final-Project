@@ -1,5 +1,7 @@
 from modules.movie import Movie
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 import random
 import itertools
 from functools import reduce
@@ -34,6 +36,8 @@ class Recommender:
         """
         Recommends top movies by genre based on rating
         """
+        if not isinstance(genre, str) or not genre.strip():
+            raise ValueError("genre must be a non-empty string")
         filtered = [m for m in self.movies if any(genre.lower() in g.lower() for g in m.genre)]
         filtered.sort(key=lambda m: m.rating, reverse=True)
         return filtered[:top_n]
@@ -42,6 +46,8 @@ class Recommender:
         """
         Recommends top movies released in a given year based on rating
         """
+        if not isinstance(year, int) or not (1888 <= year <= 2100):
+            raise ValueError("year must be an integer between 1888 and 2100")
         filtered = [m for m in self.movies if m.year == year]
         filtered.sort(key=lambda m: m.rating, reverse=True)
         return filtered[:top_n]
@@ -50,7 +56,8 @@ class Recommender:
         """
         Recommends top movies from a given decade (e.g. '1990s') based on rating
         """
-        filtered = [m for m in self.movies if m.decade == decade]
+        decade_year = int(decade.rstrip('s'))
+        filtered = [m for m in self.movies if (m.year // 10) * 10 == decade_year]
         filtered.sort(key=lambda m: m.rating, reverse=True)
         return filtered[:top_n]
 
@@ -122,6 +129,32 @@ class Recommender:
         all_genres = self.get_all_genres()
         return {genre: sum(1 for m in self.movies if genre in m.genre)
                 for genre in all_genres}
+
+
+    def get_rating_stats(self) -> dict:
+        """Returns mean, median, std, min, and max of all movie ratings using numpy."""
+        ratings = np.array([m.rating for m in self.movies])
+        return {
+            'mean':   float(np.mean(ratings)),
+            'median': float(np.median(ratings)),
+            'std':    float(np.std(ratings)),
+            'min':    float(np.min(ratings)),
+            'max':    float(np.max(ratings)),
+        }
+
+    def plot_rating_distribution(self, save_path: str = None, show: bool = False) -> None:
+        """Plots a histogram of movie ratings using matplotlib."""
+        ratings = [m.rating for m in self.movies]
+        fig, ax = plt.subplots()
+        ax.hist(ratings, bins=10, range=(0, 10), edgecolor='black')
+        ax.set_title('Movie Rating Distribution')
+        ax.set_xlabel('Rating')
+        ax.set_ylabel('Number of Movies')
+        if save_path:
+            fig.savefig(save_path)
+        if show:
+            plt.show()
+        plt.close(fig)
 
 
 # --- __name__ guard (Requirement 7) ---
