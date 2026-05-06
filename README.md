@@ -69,5 +69,5 @@ python -m pytest tests/test_movie.py
 
 ## Contributions
 
-Yihan: Created movie.py and created README and documentation
-Suprith: Created Recommender.py and created test cases.
+- Yihan: Created movie.py and created README and documentation
+- Suprith: Created Recommender.py and created test cases.
