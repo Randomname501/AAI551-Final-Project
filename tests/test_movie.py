@@ -4,18 +4,10 @@ from modules.movie import Movie
 
 def make_movie(**kwargs):
     defaults = dict(
-        imdb_title_id="tt0000001",
-        original_title="Test Movie",
-        year=2010,
-        genre="Action, Drama",
-        duration=120,
-        director="Test Director",
-        writer="Test Writer",
-        production_company="Test Studio",
-        actors="Actor One, Actor Two",
-        description="A test description",
-        avg_vote=7.5,
-        votes=1000,
+        movie_id=1,
+        title="Test Movie (2010)",
+        genres="Action|Drama",
+        avg_rating=7.5,
     )
     defaults.update(kwargs)
     return Movie(**defaults)
@@ -23,61 +15,61 @@ def make_movie(**kwargs):
 
 class TestMovieInit:
     def test_title_stored(self):
-        m = make_movie(original_title="Inception")
+        m = make_movie(title="Inception (2010)")
         assert m.title == "Inception"
 
+    def test_title_stripped_of_year_parens(self):
+        m = make_movie(title="Test Movie (2010)")
+        assert m.title == "Test Movie"
+
+    def test_year_extracted_from_title(self):
+        m = make_movie(title="Test Movie (2010)")
+        assert m.year == 2010
+
+    def test_year_is_int(self):
+        m = make_movie(title="Test Movie (1994)")
+        assert isinstance(m.year, int)
+        assert m.year == 1994
+
     def test_genre_split_multiple(self):
-        m = make_movie(genre="Action, Drama, Thriller")
+        m = make_movie(genres="Action|Drama|Thriller")
         assert m.genre == ["Action", "Drama", "Thriller"]
 
     def test_genre_single(self):
-        m = make_movie(genre="Drama")
+        m = make_movie(genres="Drama")
         assert m.genre == ["Drama"]
 
+    def test_genre_no_genres_listed(self):
+        m = make_movie(genres="(no genres listed)")
+        assert m.genre == []
+
     def test_rating_is_float(self):
-        m = make_movie(avg_vote="8.5")
+        m = make_movie(avg_rating="8.5")
         assert isinstance(m.rating, float)
         assert m.rating == 8.5
 
     def test_rating_numeric_input(self):
-        m = make_movie(avg_vote=9.0)
+        m = make_movie(avg_rating=9.0)
         assert m.rating == 9.0
-
-    def test_year_is_int(self):
-        m = make_movie(year="2010")
-        assert isinstance(m.year, int)
-        assert m.year == 2010
-
-    def test_director_stored(self):
-        m = make_movie(director="Christopher Nolan")
-        assert m.director == "Christopher Nolan"
-
-    def test_actors_split_multiple(self):
-        m = make_movie(actors="Actor One, Actor Two, Actor Three")
-        assert m.actors == ["Actor One", "Actor Two", "Actor Three"]
-
-    def test_actors_single(self):
-        m = make_movie(actors="Solo Actor")
-        assert m.actors == ["Solo Actor"]
 
 
 class TestMovieStr:
     def test_str_contains_title(self):
-        m = make_movie(original_title="Inception")
+        m = make_movie(title="Inception (2010)")
         assert "Inception" in str(m)
 
     def test_str_contains_genres(self):
-        m = make_movie(genre="Action, Sci-Fi")
+        m = make_movie(genres="Action|Sci-Fi")
         result = str(m)
         assert "Action" in result
         assert "Sci-Fi" in result
 
-    def test_str_contains_director(self):
-        m = make_movie(director="Christopher Nolan")
-        assert "Christopher Nolan" in str(m)
+    def test_str_contains_year(self):
+        m = make_movie(title="Test Movie (2010)")
+        assert "2010" in str(m)
 
     def test_str_contains_rating(self):
-        m = make_movie(avg_vote=8.8)
+        m = make_movie(avg_rating=8.8)
         assert "8.8" in str(m)
 
 
@@ -88,23 +80,23 @@ class TestMovieEq:
         assert m1 == m2
 
     def test_not_equal_different_title(self):
-        m1 = make_movie(original_title="Movie A")
-        m2 = make_movie(original_title="Movie B")
+        m1 = make_movie(title="Movie A (2010)")
+        m2 = make_movie(title="Movie B (2010)")
         assert m1 != m2
 
     def test_not_equal_different_rating(self):
-        m1 = make_movie(avg_vote=8.0)
-        m2 = make_movie(avg_vote=9.0)
-        assert m1 != m2
-
-    def test_not_equal_different_director(self):
-        m1 = make_movie(director="Director A")
-        m2 = make_movie(director="Director B")
+        m1 = make_movie(avg_rating=8.0)
+        m2 = make_movie(avg_rating=9.0)
         assert m1 != m2
 
     def test_not_equal_different_genre(self):
-        m1 = make_movie(genre="Action")
-        m2 = make_movie(genre="Drama")
+        m1 = make_movie(genres="Action")
+        m2 = make_movie(genres="Drama")
+        assert m1 != m2
+
+    def test_not_equal_different_year(self):
+        m1 = make_movie(title="Test Movie (1990)")
+        m2 = make_movie(title="Test Movie (2000)")
         assert m1 != m2
 
     def test_not_equal_to_string(self):
@@ -126,13 +118,13 @@ class TestMovieHash:
         assert isinstance(hash(m), int)
 
     def test_same_title_same_hash(self):
-        m1 = make_movie(original_title="Same Title", avg_vote=8.0)
-        m2 = make_movie(original_title="Same Title", avg_vote=9.0)
+        m1 = make_movie(title="Same Title (2000)", avg_rating=8.0)
+        m2 = make_movie(title="Same Title (2010)", avg_rating=9.0)
         assert hash(m1) == hash(m2)
 
     def test_different_title_different_hash(self):
-        m1 = make_movie(original_title="Movie A")
-        m2 = make_movie(original_title="Movie B")
+        m1 = make_movie(title="Movie A (2010)")
+        m2 = make_movie(title="Movie B (2010)")
         assert hash(m1) != hash(m2)
 
     def test_equal_movies_deduplicate_in_set(self):
@@ -153,35 +145,35 @@ class TestMovieHash:
 
 class TestMovieGetattr:
     def test_decade_2010(self):
-        m = make_movie(year=2010)
+        m = make_movie(title="Test Movie (2010)")
         assert m.decade == "2010s"
 
     def test_decade_2019(self):
-        m = make_movie(year=2019)
+        m = make_movie(title="Test Movie (2019)")
         assert m.decade == "2010s"
 
     def test_decade_1994(self):
-        m = make_movie(year=1994)
+        m = make_movie(title="Test Movie (1994)")
         assert m.decade == "1990s"
 
     def test_decade_1975(self):
-        m = make_movie(year=1975)
+        m = make_movie(title="Test Movie (1975)")
         assert m.decade == "1970s"
 
     def test_is_classic_pre_1980(self):
-        m = make_movie(year=1975)
+        m = make_movie(title="Test Movie (1975)")
         assert m.is_classic is True
 
     def test_is_classic_1979(self):
-        m = make_movie(year=1979)
+        m = make_movie(title="Test Movie (1979)")
         assert m.is_classic is True
 
     def test_is_classic_1980_false(self):
-        m = make_movie(year=1980)
+        m = make_movie(title="Test Movie (1980)")
         assert m.is_classic is False
 
     def test_is_classic_modern_false(self):
-        m = make_movie(year=2010)
+        m = make_movie(title="Test Movie (2010)")
         assert m.is_classic is False
 
     def test_unknown_attribute_raises(self):

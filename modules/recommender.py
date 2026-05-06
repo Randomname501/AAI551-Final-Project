@@ -9,22 +9,25 @@ class Recommender:
     A recommender system that loads data and suggests movies based on criteria
     """
 
-    def __init__(self, filepath: str):
+    def __init__(self, movies_path: str, ratings_path: str):
         try:
-            self.movies = self.load_data(filepath)
-        except FileNotFoundError:
-            print(f"File not found: {filepath}")
+            self.movies = self.load_data(movies_path, ratings_path)
+        except FileNotFoundError as e:
+            print(f"File not found: {e}")
         except Exception as e:
-            print(f"Error loading data: {e}")   
+            print(f"Error loading data: {e}")
 
-    def load_data(self, filepath: str):
+    def load_data(self, movies_path: str, ratings_path: str):
         """
-        Loads movie data from a CSV file using pandas and creates Movie objects
+        Loads movie data from MovieLens CSVs, merges with average ratings, and creates Movie objects
         """
-        df = pd.read_csv(filepath)
+        movies_df = pd.read_csv(movies_path)
+        ratings_df = pd.read_csv(ratings_path)
+        avg_ratings = ratings_df.groupby('movieId')['rating'].mean()
+        movies_df['avg_rating'] = movies_df['movieId'].map(avg_ratings).fillna(0.0)
         movies = []
-        for _, row in df.iterrows():
-            movies.append(Movie(*row))
+        for _, row in movies_df.iterrows():
+            movies.append(Movie(row['movieId'], row['title'], row['genres'], row['avg_rating']))
         return movies
 
     def recommend_by_genre(self, genre: str, top_n: int = 5):
@@ -35,19 +38,19 @@ class Recommender:
         filtered.sort(key=lambda m: m.rating, reverse=True)
         return filtered[:top_n]
 
-    def recommend_by_director(self, director: str, top_n: int = 5):
+    def recommend_by_year(self, year: int, top_n: int = 5):
         """
-        Reccommends top movies by director based on rating
+        Recommends top movies released in a given year based on rating
         """
-        filtered = [m for m in self.movies if director.lower() in m.director.lower()]
+        filtered = [m for m in self.movies if m.year == year]
         filtered.sort(key=lambda m: m.rating, reverse=True)
         return filtered[:top_n]
 
-    def recommend_by_actor(self, actor: str, top_n: int = 5):
+    def recommend_by_decade(self, decade: str, top_n: int = 5):
         """
-        Recommends top movies by actor based on rating
+        Recommends top movies from a given decade (e.g. '1990s') based on rating
         """
-        filtered = [m for m in self.movies if any(actor.lower() in a.lower() for a in m.actors)]
+        filtered = [m for m in self.movies if m.decade == decade]
         filtered.sort(key=lambda m: m.rating, reverse=True)
         return filtered[:top_n]
 
@@ -123,7 +126,7 @@ class Recommender:
 
 # --- __name__ guard (Requirement 7) ---
 if __name__ == "__main__":
-    r = Recommender('data/movies.csv')
+    r = Recommender('data/ml-latest-small/movies.csv', 'data/ml-latest-small/ratings.csv')
     print(f"Loaded {len(r.movies)} movies.")
     print("Top 3 (recursive):", [m.title for m in r._recursive_top_n(r.movies, 3)])
     print("All genres:", r.get_all_genres())

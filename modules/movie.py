@@ -1,22 +1,26 @@
+import re
+
+
 class Movie:
     """
     Creates a movie object with information about the movie
     """
 
-    def __init__(self, imdb_title_id, original_title, year, genre, duration, director, writer, production_company, actors, description, avg_vote, votes):
-        self.title = original_title
-        self.genre = genre.split(', ')
-        self.director = director
-        self.rating = float(avg_vote)
-        self.year = int(year)
-        self.actors = actors.split(', ')
+    def __init__(self, movie_id, title, genres, avg_rating=0.0):
+        self.movie_id = int(movie_id)
+        year_match = re.search(r'\((\d{4})\)\s*$', title)
+        self.year = int(year_match.group(1)) if year_match else 0
+        self.title = re.sub(r'\s*\(\d{4}\)\s*$', '', title).strip()
+        self.genre = [] if genres == "(no genres listed)" else genres.split('|')
+        self.rating = float(avg_rating)
 
     def __str__(self):
-        return f"{self.title} is a {', '.join(self.genre)} movie directed by {self.director} with a rating of {self.rating}"
-    
+        return f"{self.title} ({self.year}) is a {', '.join(self.genre)} movie with a rating of {self.rating}"
+
     def __eq__(self, other):
         if isinstance(other, Movie):
-            return self.title == other.title and self.genre == other.genre and self.director == other.director and self.rating == other.rating
+            return (self.title == other.title and self.year == other.year
+                    and self.genre == other.genre and self.rating == other.rating)
         return False
 
     def __hash__(self):
