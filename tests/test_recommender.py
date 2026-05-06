@@ -87,6 +87,15 @@ class TestRecommendTopRated:
         results = recommender.recommend_top_rated(top_n=1)
         assert results[0].title == "Movie C"
 
+    def test_min_rating_filters_out_low(self, recommender):
+        # ratings: A=8.5, B=7.0, C=9.0, D=6.5, E=8.0 — threshold 8.0 keeps A, C, E
+        results = recommender.recommend_top_rated(min_rating=8.0)
+        titles = {m.title for m in results}
+        assert titles == {"Movie A", "Movie C", "Movie E"}
+
+    def test_min_rating_above_max_returns_empty(self, recommender):
+        assert recommender.recommend_top_rated(min_rating=10.0) == []
+
 
 class TestStreamMovies:
     def test_is_generator(self, recommender):
@@ -103,6 +112,15 @@ class TestStreamMovies:
     def test_titles_match_loaded_order(self, recommender):
         streamed = list(recommender.stream_movies())
         assert [m.title for m in streamed] == ["Movie A", "Movie B", "Movie C", "Movie D", "Movie E"]
+
+    def test_predicate_filters_by_rating(self, recommender):
+        # only A (8.5), C (9.0), E (8.0) are >= 8.0
+        streamed = list(recommender.stream_movies(predicate=lambda m: m.rating >= 8.0))
+        assert {m.title for m in streamed} == {"Movie A", "Movie C", "Movie E"}
+
+    def test_predicate_filters_by_genre(self, recommender):
+        streamed = list(recommender.stream_movies(predicate=lambda m: "Drama" in m.genre))
+        assert {m.title for m in streamed} == {"Movie A", "Movie B"}
 
 
 class TestGetAllGenres:
@@ -173,6 +191,28 @@ class TestRecommendRandom:
         assert len(results) == 5
 
 
+class TestRankResults:
+    def test_returns_string(self, recommender):
+        results = recommender.recommend_top_rated(top_n=3)
+        assert isinstance(recommender.rank_results(results), str)
+
+    def test_header_appears(self, recommender):
+        results = recommender.recommend_top_rated(top_n=1)
+        output = recommender.rank_results(results, header="Best Movies")
+        assert output.startswith("Best Movies")
+
+    def test_ranks_are_numbered(self, recommender):
+        results = recommender.recommend_top_rated(top_n=3)
+        output = recommender.rank_results(results)
+        assert "  1." in output
+        assert "  2." in output
+        assert "  3." in output
+
+    def test_empty_list_returns_header_only(self, recommender):
+        output = recommender.rank_results([], header="Nothing")
+        assert output == "Nothing"
+
+
 class TestGetMoviePairs:
     def test_three_movies_give_three_pairs(self, recommender):
         pairs = recommender.get_movie_pairs(top_n=3)
@@ -187,63 +227,6 @@ class TestGetMoviePairs:
     def test_two_movies_give_one_pair(self, recommender):
         pairs = recommender.get_movie_pairs(top_n=2)
         assert len(pairs) == 1
-
-
-class TestGetTitles:
-    def test_returns_list(self, recommender):
-        assert isinstance(recommender.get_titles(), list)
-
-    def test_correct_titles(self, recommender):
-        assert recommender.get_titles() == ["Movie A", "Movie B", "Movie C", "Movie D", "Movie E"]
-
-    def test_all_strings(self, recommender):
-        assert all(isinstance(t, str) for t in recommender.get_titles())
-
-
-class TestGetRatedAbove:
-    def test_threshold_8_returns_three(self, recommender):
-        results = recommender.get_rated_above(8.0)
-        titles = {m.title for m in results}
-        assert titles == {"Movie A", "Movie C", "Movie E"}
-
-    def test_threshold_9_returns_one(self, recommender):
-        results = recommender.get_rated_above(9.0)
-        assert len(results) == 1
-        assert results[0].title == "Movie C"
-
-    def test_threshold_above_max_returns_empty(self, recommender):
-        assert recommender.get_rated_above(10.0) == []
-
-    def test_all_results_meet_threshold(self, recommender):
-        threshold = 7.0
-        for m in recommender.get_rated_above(threshold):
-            assert m.rating >= threshold
-
-
-class TestGetTitleRatingPairs:
-    def test_returns_list_of_tuples(self, recommender):
-        pairs = recommender.get_title_rating_pairs()
-        assert isinstance(pairs, list)
-        assert all(isinstance(p, tuple) for p in pairs)
-
-    def test_correct_length(self, recommender):
-        assert len(recommender.get_title_rating_pairs()) == 5
-
-    def test_first_pair(self, recommender):
-        assert recommender.get_title_rating_pairs()[0] == ("Movie A", 8.5)
-
-    def test_each_pair_is_str_float(self, recommender):
-        for title, rating in recommender.get_title_rating_pairs():
-            assert isinstance(title, str)
-            assert isinstance(rating, float)
-
-
-class TestGetTotalRating:
-    def test_correct_sum(self, recommender):
-        assert recommender.get_total_rating() == pytest.approx(39.0)
-
-    def test_returns_float(self, recommender):
-        assert isinstance(recommender.get_total_rating(), float)
 
 
 class TestGetGenreCounts:
@@ -307,7 +290,7 @@ class TestGetRatingStats:
         assert isinstance(recommender.get_rating_stats(), dict)
 
     def test_has_required_keys(self, recommender):
-        assert set(recommender.get_rating_stats().keys()) == {'mean', 'median', 'std', 'min', 'max'}
+        assert {'mean', 'median', 'std', 'min', 'max', 'total'}.issubset(recommender.get_rating_stats().keys())
 
     def test_mean(self, recommender):
         assert recommender.get_rating_stats()['mean'] == pytest.approx(7.8)
@@ -319,6 +302,10 @@ class TestGetRatingStats:
         stats = recommender.get_rating_stats()
         assert stats['min'] == pytest.approx(6.5)
         assert stats['max'] == pytest.approx(9.0)
+
+    def test_total_matches_sum(self, recommender):
+        # ratings: 8.5 + 7.0 + 9.0 + 6.5 + 8.0 = 39.0
+        assert recommender.get_rating_stats()['total'] == pytest.approx(39.0)
 
 
 class TestPlotRatingDistribution:

@@ -30,6 +30,10 @@ class Movie:
         """Returns a hash based on the movie title for use in sets and dicts."""
         return hash(self.title)
 
+    def __len__(self):
+        """Returns the number of genres this movie belongs to."""
+        return len(self.genre)
+
     def __getattr__(self, name):
         """Dynamically computes 'decade' and 'is_classic'; raises AttributeError otherwise."""
         if name == 'decade':

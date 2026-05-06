@@ -180,3 +180,21 @@ class TestMovieGetattr:
         m = make_movie()
         with pytest.raises(AttributeError):
             _ = m.nonexistent_attribute
+
+
+class TestMovieLen:
+    def test_len_multiple_genres(self):
+        m = make_movie(genres="Action|Drama|Comedy")
+        assert len(m) == 3
+
+    def test_len_single_genre(self):
+        m = make_movie(genres="Drama")
+        assert len(m) == 1
+
+    def test_len_no_genres(self):
+        m = make_movie(genres="(no genres listed)")
+        assert len(m) == 0
+
+    def test_len_returns_int(self):
+        m = make_movie(genres="Action|Drama")
+        assert isinstance(len(m), int)
