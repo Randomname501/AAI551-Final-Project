@@ -9,9 +9,10 @@ Users can explore the dataset through six live-updating widget panels — search
 ### Key Features
 
 - Interactive Jupyter notebook with `ipywidgets` controls (dropdowns, sliders, live text search)
-- Recommendations by genre, year, decade, rating threshold, and genre intersection
-- Statistical analysis of ratings using `numpy` (mean, median, std, min, max)
-- Rating distribution histogram with `matplotlib`
+- Recommendations by genre, year, decade, rating threshold, genre intersection, and random sampling
+- Numbered output via `rank_results` using `enumerate`; lazy streaming via `stream_movies(predicate)`
+- Statistical analysis of ratings using `numpy` (mean, median, std, min, max, reduce-based total)
+- Rating distribution histogram with `matplotlib` (mean and median reference lines)
 - Clean two-class design: `Movie` (data model) and `Recommender` (logic layer)
 - 113 unit tests across both classes using `pytest`
 
@@ -21,7 +22,7 @@ Users can explore the dataset through six live-updating widget panels — search
 
 | Name | Email | CWID |
 |---|---|---|
-| Suprith Reddy | sreddy4@stevens.edu | 2001010 |
+| Suprith Reddy | sreddy4@stevens.edu | 20010383 |
 | Yihan Jiang | jiang68@stevens.edu | 20015192 |
 
 ---
@@ -37,22 +38,22 @@ AAI551-Final-Project/
 │       ├── movies.csv               9,742 movies (movieId, title, genres)
 │       └── ratings.csv              100,836 ratings (userId, movieId, rating, timestamp)
 ├── modules/
-│   ├── __init__.py
+│   ├── __init__.py                  Exports Movie and Recommender
 │   ├── movie.py                     Movie class
 │   └── recommender.py               Recommender class
 └── tests/
     ├── conftest.py                  Shared pytest fixtures
-    ├── test_movie.py                Movie unit tests (36 tests)
-    └── test_recommender.py          Recommender unit tests (77 tests)
+    ├── test_movie.py                Movie unit tests (40 tests)
+    └── test_recommender.py          Recommender unit tests (73 tests)
 ```
 
 ### Module Descriptions
 
 **`modules/movie.py`** — `Movie` class  
-Represents a single movie record parsed from the MovieLens CSV. Extracts year from title using regex, splits the pipe-separated genre string into a list, and stores a float average rating. Implements `__str__`, `__eq__`, `__hash__`, and `__getattr__` (dynamically computes `movie.decade` and `movie.is_classic` from the year field).
+Represents a single movie record parsed from the MovieLens CSV. Extracts year from title using regex, splits the pipe-separated genre string into a list, and stores a float average rating. Implements `__str__`, `__eq__`, `__hash__`, `__len__` (number of genres), and `__getattr__` (dynamically computes `movie.decade` and `movie.is_classic` from the year field).
 
 **`modules/recommender.py`** — `Recommender` class  
-Loads the two CSV files with `pandas`, merges average ratings per movie, and creates a list of `Movie` objects. Provides recommendation methods (by genre, year, decade, top-rated, multi-genre intersection, random), functional utilities (map, filter, zip, reduce), a generator (`stream_movies`), recursive top-N selection, numpy statistics, and a matplotlib histogram.
+Loads the two CSV files with `pandas`, merges average ratings per movie, and constructs a list of `Movie` objects using `map` for a functional data pipeline. Provides recommendation methods (by genre, year, decade, top-rated with optional `min_rating` via `filter`, multi-genre intersection via set operations, random), `rank_results` (numbered output via `enumerate`), a lazy generator (`stream_movies(predicate)`), recursive top-N selection, numpy statistics (dispatched via `zip`, cross-checked via `reduce`), and a matplotlib histogram.
 
 ---
 
@@ -66,7 +67,7 @@ Loads the two CSV files with `pandas`, merges average ratings per movie, and cre
 | `ipywidgets` | Interactive notebook controls |
 | `pytest` | Unit testing |
 
-Python 3.10 or later is required. Python 3.12 is recommended.
+Python 3.12 or later is required.
 
 ### Installation
 
@@ -92,7 +93,7 @@ pip install pandas numpy matplotlib ipywidgets pytest
    jupyter notebook
    ```
 
-3. Open `main.ipynb` and run **Kernel → Restart & Run All**.
+3. Open `main.ipynb` and run **Kernel → Restart Kernel and Run All Cells**.
 
 The notebook is organized into three sections:
 
@@ -102,11 +103,11 @@ The notebook is organized into three sections:
   - *Filter by Release Year* — slider from 1902 to 2018
   - *Filter by Decade* — dropdown of all decades in the dataset
   - *Two-Genre Intersection* — pick two genres to see movies in both
-  - *Filter by Minimum Rating* — float slider from 0.0 to 5.0
+  - *Filter by Minimum Rating* — float slider (uses `filter` inside `recommend_top_rated`)
 
-- **Statistics & Visualization** — numpy summary statistics and a matplotlib rating histogram
+- **Statistics & Visualization** — numpy summary statistics (including `reduce`-based total) and a matplotlib rating histogram with mean/median reference lines
 
-- **Feature Demonstrations** — Static cells showing each required Python feature (`__getattr__`, generator, set operations, recursion, built-in libraries, map/filter/zip/reduce, dict comprehension)
+- **System Walkthrough** — Cells showing each Python feature in the context of the recommendation workflow (`rank_results`/`enumerate`, lazy `stream_movies(predicate)`, `zip`/`reduce` in stats, `__getattr__`, set operations, recursion, built-in libraries, dict comprehension)
 
 ### Running Tests
 
@@ -134,29 +135,33 @@ py -m pytest tests/
 | Requirement | Implementation |
 |---|---|
 | Classes with relationship | `Movie` (data model) composed inside `Recommender` |
-| `__str__`, operator overload | `Movie.__str__`, `__eq__`, `__hash__` |
+| `__str__`, operator overloads | `Movie.__str__`, `__eq__`, `__hash__`, `__len__` (genre count) |
 | `__getattr__` | `Movie.decade`, `Movie.is_classic` computed on demand |
-| Two advanced libraries | `pandas` (data I/O), `numpy` (statistics), `matplotlib` (visualization) |
+| Two advanced libraries | `pandas` (data I/O + rating merge), `numpy` (statistics), `matplotlib` (histogram) |
 | Exception handling | `FileNotFoundError` on bad CSV path; `ValueError` on invalid genre/year input |
 | Data I/O | `pd.read_csv` for both MovieLens files |
-| Generators | `Recommender.stream_movies()` yields one `Movie` at a time |
-| Set operations | `get_all_genres()` (set comprehension), `recommend_by_multiple_genres()` (set intersection `&`) |
+| `map` | `load_data` — constructs `Movie` objects from DataFrame rows |
+| `filter` + `lambda` | `recommend_top_rated(min_rating)` — excludes movies below threshold |
+| `zip` | `get_rating_stats` — pairs stat names with numpy functions for dispatch |
+| `reduce` | `get_rating_stats` — independently sums all ratings to cross-check the mean |
+| `enumerate` | `rank_results` — numbers every recommendation list starting at 1 |
+| Generator | `stream_movies(predicate)` — yields movies lazily, optionally filtered |
+| Set operations | `get_all_genres()` (set comprehension), `recommend_by_multiple_genres()` (set `&`) |
 | Recursion | `_recursive_top_n()` — base case on empty list or n=0 |
-| Built-in libraries | `random` (sampling), `itertools` (combinations), `functools.reduce` |
-| Comprehensions | List, set, and dict comprehensions throughout `recommender.py` |
-| `map`, `filter`, `zip`, `reduce`, `lambda` | `get_titles`, `get_rated_above`, `get_title_rating_pairs`, `get_total_rating` |
+| Built-in libraries | `random` (sampling), `itertools` (co-watch pairs), `functools.reduce` |
+| Comprehensions | List (filtered movies), set (`get_all_genres`), dict (`get_genre_counts`) |
 | `__name__` guard | Bottom of `recommender.py` |
-| Pytest | 113 tests across `test_movie.py` and `test_recommender.py` |
+| Pytest | 113 tests in `test_movie.py` (40) and `test_recommender.py` (73) |
 
 ---
 
 ## Contributions
 
 **Yihan Jiang**
-- Designed and implemented `modules/movie.py`: `Movie` class with regex-based title/year parsing, genre splitting, `__str__`, `__eq__`, `__hash__`, and the `__getattr__` system for computed attributes (`decade`, `is_classic`)
+- Designed and implemented `modules/movie.py`: `Movie` class with regex-based title/year parsing, genre splitting, `__str__`, `__eq__`, `__hash__`, `__len__`, and the `__getattr__` system for computed attributes (`decade`, `is_classic`)
 - Wrote the README and project documentation
 
 **Suprith Reddy**
-- Designed and implemented `modules/recommender.py`: all recommendation methods, functional programming patterns (map, filter, zip, reduce, lambda), set operations, recursion, generator, numpy statistics, matplotlib visualization, `ValueError` input guards, and the `__name__` guard
-- Built the interactive Jupyter notebook (`main.ipynb`) with six `ipywidgets` filter panels
+- Designed and implemented `modules/recommender.py`: all recommendation methods, functional data pipeline (`map` in `load_data`), `filter` in `recommend_top_rated`, `zip`/`reduce` in `get_rating_stats`, `enumerate` in `rank_results`, lazy generator `stream_movies(predicate)`, set operations, recursion, numpy statistics, matplotlib visualization, `ValueError` input guards, and the `__name__` guard
+- Built the interactive Jupyter notebook (`main.ipynb`) with six `ipywidgets` filter panels and system walkthrough cells
 - Wrote all 113 pytest test cases in `tests/conftest.py`, `tests/test_movie.py`, and `tests/test_recommender.py`
