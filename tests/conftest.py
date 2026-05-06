@@ -3,41 +3,47 @@ import pandas as pd
 from modules.movie import Movie
 from modules.recommender import Recommender
 
-COLUMNS = [
-    "imdb_title_id", "original_title", "year", "genre", "duration",
-    "director", "writer", "production_company", "actors", "description",
-    "avg_vote", "votes",
+MOVIE_COLUMNS = ["movieId", "title", "genres"]
+RATING_COLUMNS = ["userId", "movieId", "rating", "timestamp"]
+
+MOVIE_ROWS = [
+    (1, "Movie A (2010)", "Action|Drama"),
+    (2, "Movie B (1975)", "Drama|Comedy"),
+    (3, "Movie C (1985)", "Action|Thriller"),
+    (4, "Movie D (1960)", "Comedy|Romance"),
+    (5, "Movie E (2000)", "Action|Comedy"),
 ]
 
-SAMPLE_ROWS = [
-    ("tt0000001", "Movie A", 2010, "Action, Drama",   120, "Director X", "Writer A", "Studio A", "Actor One, Actor Two",    "Desc A", 8.5, 10000),
-    ("tt0000002", "Movie B", 1975, "Drama, Comedy",    90, "Director Y", "Writer B", "Studio B", "Actor Two, Actor Three",  "Desc B", 7.0,  5000),
-    ("tt0000003", "Movie C", 1985, "Action, Thriller", 100, "Director X", "Writer C", "Studio C", "Actor One, Actor Four",  "Desc C", 9.0, 20000),
-    ("tt0000004", "Movie D", 1960, "Comedy, Romance",   80, "Director Z", "Writer D", "Studio D", "Actor Five",             "Desc D", 6.5,  3000),
-    ("tt0000005", "Movie E", 2000, "Action, Comedy",   110, "Director Y", "Writer E", "Studio E", "Actor Three, Actor Five","Desc E", 8.0, 15000),
+# One rating per movie so avg_rating == that value: 8.5, 7.0, 9.0, 6.5, 8.0
+RATING_ROWS = [
+    (1, 1, 8.5, 0),
+    (1, 2, 7.0, 0),
+    (1, 3, 9.0, 0),
+    (1, 4, 6.5, 0),
+    (1, 5, 8.0, 0),
 ]
 
 
 @pytest.fixture
 def sample_movie():
-    row = SAMPLE_ROWS[0]
-    return Movie(*row)
+    return Movie(1, "Movie A (2010)", "Action|Drama", 8.5)
 
 
 @pytest.fixture
 def classic_movie():
-    row = SAMPLE_ROWS[1]
-    return Movie(*row)
+    return Movie(2, "Movie B (1975)", "Drama|Comedy", 7.0)
 
 
 @pytest.fixture
-def sample_csv(tmp_path):
-    df = pd.DataFrame(SAMPLE_ROWS, columns=COLUMNS)
-    csv_path = tmp_path / "test_movies.csv"
-    df.to_csv(csv_path, index=False)
-    return str(csv_path)
+def sample_csv_paths(tmp_path):
+    movies_path = tmp_path / "movies.csv"
+    ratings_path = tmp_path / "ratings.csv"
+    pd.DataFrame(MOVIE_ROWS, columns=MOVIE_COLUMNS).to_csv(movies_path, index=False)
+    pd.DataFrame(RATING_ROWS, columns=RATING_COLUMNS).to_csv(ratings_path, index=False)
+    return str(movies_path), str(ratings_path)
 
 
 @pytest.fixture
-def recommender(sample_csv):
-    return Recommender(sample_csv)
+def recommender(sample_csv_paths):
+    movies_path, ratings_path = sample_csv_paths
+    return Recommender(movies_path, ratings_path)

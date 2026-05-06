@@ -36,50 +36,42 @@ class TestRecommendByGenre:
         assert recommender.recommend_by_genre("Horror") == []
 
 
-class TestRecommendByDirector:
-    def test_director_x_returns_two(self, recommender):
-        results = recommender.recommend_by_director("Director X")
-        assert len(results) == 2
+class TestRecommendByYear:
+    def test_year_2010_returns_movie_a(self, recommender):
+        results = recommender.recommend_by_year(2010)
+        assert len(results) == 1
+        assert results[0].title == "Movie A"
 
-    def test_director_x_sorted_by_rating(self, recommender):
-        results = recommender.recommend_by_director("Director X")
-        assert [m.title for m in results] == ["Movie C", "Movie A"]
-
-    def test_top_n_limits_results(self, recommender):
-        results = recommender.recommend_by_director("Director X", top_n=1)
+    def test_year_1985_returns_movie_c(self, recommender):
+        results = recommender.recommend_by_year(1985)
         assert len(results) == 1
         assert results[0].title == "Movie C"
 
-    def test_case_insensitive(self, recommender):
-        lower = recommender.recommend_by_director("director x")
-        upper = recommender.recommend_by_director("Director X")
-        assert [m.title for m in lower] == [m.title for m in upper]
-
-    def test_unknown_director_returns_empty(self, recommender):
-        assert recommender.recommend_by_director("Unknown Director") == []
-
-
-class TestRecommendByActor:
-    def test_actor_one_returns_two(self, recommender):
-        results = recommender.recommend_by_actor("Actor One")
-        assert len(results) == 2
-
-    def test_actor_one_sorted_by_rating(self, recommender):
-        results = recommender.recommend_by_actor("Actor One")
-        assert [m.title for m in results] == ["Movie C", "Movie A"]
-
     def test_top_n_limits_results(self, recommender):
-        results = recommender.recommend_by_actor("Actor One", top_n=1)
+        results = recommender.recommend_by_year(2010, top_n=1)
+        assert len(results) == 1
+
+    def test_unknown_year_returns_empty(self, recommender):
+        assert recommender.recommend_by_year(1900) == []
+
+
+class TestRecommendByDecade:
+    def test_decade_2010s_returns_movie_a(self, recommender):
+        results = recommender.recommend_by_decade("2010s")
+        assert len(results) == 1
+        assert results[0].title == "Movie A"
+
+    def test_decade_1980s_returns_movie_c(self, recommender):
+        results = recommender.recommend_by_decade("1980s")
         assert len(results) == 1
         assert results[0].title == "Movie C"
 
-    def test_case_insensitive(self, recommender):
-        lower = recommender.recommend_by_actor("actor one")
-        upper = recommender.recommend_by_actor("Actor One")
-        assert [m.title for m in lower] == [m.title for m in upper]
+    def test_top_n_limits_results(self, recommender):
+        results = recommender.recommend_by_decade("2010s", top_n=1)
+        assert len(results) == 1
 
-    def test_unknown_actor_returns_empty(self, recommender):
-        assert recommender.recommend_by_actor("Unknown Actor") == []
+    def test_unknown_decade_returns_empty(self, recommender):
+        assert recommender.recommend_by_decade("1890s") == []
 
 
 class TestRecommendTopRated:
